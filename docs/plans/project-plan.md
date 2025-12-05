@@ -74,6 +74,7 @@ pyyaml = "^6.0"
 tqdm = "^4.66.0"
 pydantic = "^2.0"          # For configuration validation
 pydantic-settings = "^2.0"  # For settings management
+loguru = "^0.7.0"          # Modern logging library
 ```
 
 ### 2.3 Development Dependencies
@@ -271,14 +272,16 @@ from src.config import load_config, Config
 from src.converter import BatchConverter
 from src.logger import setup_logging
 from src.utils import validate_ffmpeg
+from loguru import logger
 
 def main() -> None:
     """Main entry point for batch conversion."""
     # Setup logging
-    logger = setup_logging()
+    setup_logging()
     
     # Load and validate configuration
     config: Config = load_config("config.yaml")
+    logger.info("Configuration loaded successfully")
     
     # Validate FFmpeg installation
     if not validate_ffmpeg():
@@ -286,7 +289,7 @@ def main() -> None:
         return
     
     # Initialize batch converter
-    converter = BatchConverter(config=config, logger=logger)
+    converter = BatchConverter(config=config)
     
     # Scan for MKV files
     mkv_files: list[Path] = converter.scan_input_folder()
@@ -388,7 +391,7 @@ from typing import Any
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
-import logging
+from loguru import logger
 
 from src.config import Config
 
@@ -406,10 +409,9 @@ class ConversionResult:
 class BatchConverter:
     """Batch MKV to MP4 converter with hard-sub."""
     
-    def __init__(self, config: Config, logger: logging.Logger) -> None:
+    def __init__(self, config: Config) -> None:
         """Initialize batch converter."""
         self.config: Config = config
-        self.logger: logging.Logger = logger
         self._ensure_directories()
     
     def _ensure_directories(self) -> None:
@@ -422,7 +424,7 @@ class BatchConverter:
         input_path: Path = self.config.input_folder
         
         if not input_path.exists():
-            self.logger.error(f"Input folder not found: {input_path}")
+            logger.error(f"Input folder not found: {input_path}")
             return []
         
         mkv_files: list[Path] = sorted(input_path.glob("**/*.mkv"))
@@ -463,7 +465,7 @@ class BatchConverter:
         
         # Skip if output already exists and skip_existing is True
         if self.config.skip_existing and output_file.exists():
-            self.logger.info(f"Skipping {input_file.name} (already converted)")
+            logger.info(f"Skipping {input_file.name} (already converted)")
             return ConversionResult(
                 input_file=input_file,
                 output_file=output_file,
@@ -480,7 +482,7 @@ class BatchConverter:
             # Build FFmpeg command
             cmd: list[str] = self._build_ffmpeg_command(input_file, output_file)
             
-            self.logger.info(f"Converting: {input_file.name}")
+            logger.info(f"Converting: {input_file.name}")
             
             # Execute FFmpeg
             result = subprocess.run(
@@ -499,6 +501,13 @@ class BatchConverter:
             
             converted_size_mb: float = output_file.stat().st_size / (1024 * 1024)
             
+            # Log success with extra context
+            logger.success(
+                f"{input_file.name} → {output_file.name} | "
+                f"{original_size_mb:.1f}MB → {converted_size_mb:.1f}MB | "
+                f"{duration:.1f}s"
+            )
+            
             return ConversionResult(
                 input_file=input_file,
                 output_file=output_file,
@@ -509,7 +518,7 @@ class BatchConverter:
             )
             
         except subprocess.CalledProcessError as e:
-            self.logger.error(f"FFmpeg error for {input_file.name}: {e.stderr}")
+            logger.error(f"FFmpeg error for {input_file.name}: {e.stderr}")
             return ConversionResult(
                 input_file=input_file,
                 output_file=output_file,
@@ -520,7 +529,7 @@ class BatchConverter:
                 error_message=str(e.stderr)
             )
         except Exception as e:
-            self.logger.error(f"Unexpected error for {input_file.name}: {str(e)}")
+            logger.exception(f"Unexpected error for {input_file.name}")
             return ConversionResult(
                 input_file=input_file,
                 output_file=output_file,
@@ -591,45 +600,66 @@ class BatchConverter:
 
 #### Module: `src/logger.py`
 
-**Purpose**: Logging configuration and utilities
+**Purpose**: Logging configuration and utilities using Loguru
 
 ```python
-import logging
 from pathlib import Path
 from datetime import datetime
+from loguru import logger
+import sys
 
-def setup_logging(logs_folder: Path = Path("logs")) -> logging.Logger:
-    """Setup logging configuration."""
+def setup_logging(logs_folder: Path = Path("logs"), verbose: bool = False) -> None:
+    """Setup Loguru logging configuration.
+    
+    Args:
+        logs_folder: Directory to store log files
+        verbose: Enable debug level logging
+    """
     logs_folder.mkdir(parents=True, exist_ok=True)
     
-    # Create logger
-    logger: logging.Logger = logging.getLogger("mkv_converter")
-    logger.setLevel(logging.INFO)
+    # Remove default handler
+    logger.remove()
     
-    # Create formatters
-    file_formatter = logging.Formatter(
-        "[%(asctime)s] %(levelname)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+    # Console handler with color and formatting
+    log_level: str = "DEBUG" if verbose else "INFO"
+    logger.add(
+        sys.stderr,
+        format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>",
+        level=log_level,
+        colorize=True,
     )
-    console_formatter = logging.Formatter(
-        "%(levelname)s: %(message)s"
+    
+    # File handler - all logs with rotation
+    logger.add(
+        logs_folder / "conversion_{time:YYYY-MM-DD}.log",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}",
+        level="DEBUG",
+        rotation="00:00",  # New file at midnight
+        retention="30 days",  # Keep logs for 30 days
+        compression="zip",  # Compress rotated logs
     )
     
-    # File handler - all logs
-    all_logs_file: Path = logs_folder / f"conversion_{datetime.now():%Y%m%d_%H%M%S}.log"
-    file_handler = logging.FileHandler(all_logs_file)
-    file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(file_formatter)
+    # Success log - only successful conversions
+    logger.add(
+        logs_folder / "success.log",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {message}",
+        level="SUCCESS",
+        filter=lambda record: record["level"].name == "SUCCESS",
+    )
     
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(console_formatter)
+    # Error log - only errors
+    logger.add(
+        logs_folder / "errors.log",
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+        level="ERROR",
+        backtrace=True,  # Include full traceback
+        diagnose=True,   # Show variable values
+    )
     
-    # Add handlers
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-    
+    logger.info("Logging initialized successfully")
+
+def get_logger():
+    """Get the configured logger instance."""
     return logger
 ```
 
@@ -728,12 +758,22 @@ skip_existing: true        # Skip already converted files
 | **Disk Space Full** | Stop processing, alert user | Manual intervention needed |
 | **Permission Denied** | Log error, skip file | Check file permissions |
 
-### 6.2 Logging Levels
+### 6.2 Loguru Logging Levels
 
+- **DEBUG**: Detailed diagnostic information (enabled with verbose flag)
 - **INFO**: Normal operations (file processing, progress)
+- **SUCCESS**: Successful conversions (Loguru custom level)
 - **WARNING**: Recoverable issues (missing config, skip existing)
-- **ERROR**: Failed conversions, critical issues
-- **DEBUG**: Detailed FFmpeg output (optional verbose mode)
+- **ERROR**: Failed conversions with traceback
+- **CRITICAL**: Fatal errors that stop execution
+
+**Loguru Benefits**:
+- ✅ Automatic exception catching with `.exception()`
+- ✅ Colored console output for better readability
+- ✅ Automatic log rotation and compression
+- ✅ Structured logging with context binding
+- ✅ No handler configuration needed
+- ✅ Thread-safe by default
 
 ---
 
@@ -778,6 +818,8 @@ def process_all_parallel(self, mkv_files: list[Path]) -> list[ConversionResult]:
 **Purpose**: Select specific subtitle track based on language preference
 
 ```python
+from loguru import logger
+
 def detect_subtitle_tracks(video_path: Path) -> list[dict[str, str]]:
     """Extract subtitle track information."""
     cmd: list[str] = [
@@ -931,6 +973,7 @@ import pytest
 from pathlib import Path
 from src.converter import BatchConverter
 from src.config import Config
+from loguru import logger
 
 @pytest.fixture
 def test_config() -> Config:
@@ -943,9 +986,10 @@ def test_config() -> Config:
 @pytest.fixture
 def converter(test_config: Config) -> BatchConverter:
     """Create test converter instance."""
-    import logging
-    logger = logging.getLogger("test")
-    return BatchConverter(config=test_config, logger=logger)
+    # Configure loguru for testing (suppress output)
+    logger.remove()
+    logger.add(lambda _: None)  # Suppress all output
+    return BatchConverter(config=test_config)
 
 def test_generate_output_path(converter: BatchConverter) -> None:
     """Test output path generation."""
@@ -993,7 +1037,7 @@ def test_full_conversion_workflow() -> None:
         output_folder=Path("tests/fixtures/output"),
     )
     
-    converter = BatchConverter(config=config, logger=logging.getLogger())
+    converter = BatchConverter(config=config)
     result = converter.process_file(test_mkv)
     
     # Assertions
