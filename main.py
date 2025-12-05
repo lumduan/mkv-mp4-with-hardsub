@@ -1,6 +1,1 @@
-def main():
-    print("Hello from mkv-mp4-with-hardsub!")
-
-
-if __name__ == "__main__":
-    main()
+"""Main entry point for batch MKV to MP4 converter."""

@@ -1,0 +1,21 @@
+# Input/Output Directories
+input_folder: "input"
+output_folder: "output"
+logs_folder: "logs"
+
+# Video Encoding Settings
+video:
+  resolution: 480          # Target height (480p, 720p, 1080p)
+  codec: "libx264"         # Video codec (libx264, libx265)
+  crf: 24                  # Quality (0-51, lower = better quality)
+  preset: "medium"         # Speed preset (ultrafast to veryslow)
+
+# Audio Encoding Settings
+audio:
+  codec: "aac"             # Audio codec
+  bitrate: "128k"          # Audio bitrate
+
+# Processing Options
+parallel_processing: false  # Enable parallel conversions
+max_workers: 2             # Number of parallel workers
+skip_existing: true        # Skip already converted files
