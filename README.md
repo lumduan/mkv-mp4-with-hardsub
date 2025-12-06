@@ -86,6 +86,20 @@ cp /path/to/your/videos/*.mkv input/
 ```
 
 ### 5. Run the Converter
+
+**Option A: Interactive Menu-Driven Processor** (Recommended)
+```bash
+.venv/bin/python scripts/process_mkv_files.py
+```
+
+This launches an interactive menu with:
+- **View files and status**: See all MKV files with conversion status
+- **Process single file**: Convert one file at a time with progress feedback
+- **Batch process all files**: Convert all pending files automatically
+- **Conversion history**: Track results from current session
+- **Real-time progress**: See detailed conversion statistics
+
+**Option B: Direct Script Execution**
 ```bash
 python main.py
 ```
@@ -181,7 +195,44 @@ export CONVERTER_VERBOSE=true
 python main.py
 ```
 
-## 🛠️ Interactive Config Manager
+## 🛠️ Utility Scripts
+
+The project includes several interactive menu-driven scripts to help with different tasks:
+
+### 1. Interactive MKV Processor (process_mkv_files.py)
+
+**Purpose**: Process MKV files with an interactive menu interface (implements Step 4 of the project plan)
+
+```bash
+.venv/bin/python scripts/process_mkv_files.py
+```
+
+**Features**:
+- **View Files**: Browse all MKV files with conversion status and file details
+- **Single File Processing**: Convert individual files with real-time progress
+- **Batch Processing**: Convert all pending files automatically
+- **Detailed Feedback**: See file size reduction, conversion time, and quality metrics
+- **Conversion History**: Track all conversions in the current session
+- **Error Handling**: Graceful error reporting with retry options
+- **Progress Tracking**: Real-time conversion statistics and summaries
+
+**Example Workflow**:
+```text
+📋 Main Menu:
+  1. View files and status
+  2. View files with details (requires ffprobe)
+  3. Process single file
+  4. 🚀 Process all pending files
+  5. View conversion history (current session)
+  6. View current settings
+  7. Refresh file list
+  H. Show help
+  0. Exit
+```
+
+### 2. Interactive Config Manager (config_manager.py)
+
+**Purpose**: Manage configuration settings with a user-friendly interface
 
 The config manager provides a user-friendly menu-driven interface for managing settings with an enhanced Quick Setup Wizard for first-time users.
 
@@ -318,7 +369,10 @@ mkv-mp4-with-hardsub/
 │
 ├── scripts/            # Utility scripts
 │   ├── __init__.py
-│   └── config_manager.py  # Interactive config manager
+│   ├── config_manager.py     # Interactive config manager
+│   ├── process_mkv_files.py  # Interactive MKV processor (Step 4)
+│   ├── scan_mkv_files.py     # MKV file scanner
+│   └── validate_ffmpeg.py    # FFmpeg validation
 │
 ├── tests/              # Unit tests
 │   ├── test_converter.py
