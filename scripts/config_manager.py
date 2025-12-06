@@ -2,6 +2,7 @@
 """Interactive CLI tool for managing config.yaml settings.
 
 This script provides a user-friendly menu-driven interface for:
+- Quick setup wizard for first-time users
 - Viewing current configuration
 - Updating settings interactively
 - Validating configuration
@@ -16,12 +17,30 @@ Usage:
 
 import sys
 from pathlib import Path
+from typing import Optional
 
 # Add parent directory to path to import src modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config import load_config, save_config, Config, VideoConfig, AudioConfig, SubtitleConfig
-from typing import Optional
+# Check Python version and warn about unstable versions
+if sys.version_info >= (3, 14) and "a" in sys.version.lower():
+    print("\n⚠️  WARNING: You are using Python 3.14 alpha version!")
+    print("   This may cause crashes with some dependencies (pydantic).")
+    print("   Recommended: Use Python 3.10, 3.11, 3.12, or 3.13 stable release.\n")
+    response = input("Continue anyway? (yes/no) [no]: ").strip().lower()
+    if response not in ['yes', 'y']:
+        print("Exiting. Please use a stable Python version.")
+        sys.exit(1)
+
+try:
+    from src.config import load_config, save_config, Config, VideoConfig, AudioConfig, SubtitleConfig
+except Exception as e:
+    print(f"\n❌ Error loading configuration modules: {e}")
+    print("\nPossible solutions:")
+    print("  1. Install dependencies: uv sync")
+    print("  2. Use a stable Python version (3.10-3.13)")
+    print("  3. Check if pydantic is installed correctly")
+    sys.exit(1)
 
 
 class ConfigManager:
@@ -35,6 +54,7 @@ class ConfigManager:
         """
         self.config_path = Path(config_path)
         self.config: Optional[Config] = None
+        self.is_first_run = not self.config_path.exists()
         self.load_configuration()
 
     def load_configuration(self) -> None:
@@ -248,50 +268,222 @@ class ConfigManager:
         else:
             print("✗ Reset cancelled")
 
+    def show_welcome(self) -> None:
+        """Display welcome message and configuration guide."""
+        print("\n" + "=" * 70)
+        print(" " * 15 + "🎬 MKV to MP4 Converter")
+        print(" " * 15 + "Configuration Manager")
+        print("=" * 70)
+        print("\n📝 About config.yaml:")
+        print("   The config.yaml file controls how your videos are converted.")
+        print("   You can customize:")
+        print("   • Video quality (resolution, codec, quality level)")
+        print("   • Audio settings (codec, bitrate)")
+        print("   • Subtitle preferences (language, styling)")
+        print("   • Processing options (parallel processing, etc.)")
+        print("\n💡 Tips:")
+        print("   • Lower CRF value = Better quality but larger file size")
+        print("   • Higher resolution = Better quality but slower conversion")
+        print("   • Enable parallel processing if you have a multi-core CPU")
+        print("=" * 70)
+
+    def show_help(self) -> None:
+        """Display detailed help information."""
+        print("\n" + "=" * 70)
+        print("📚 Configuration Help & Tips")
+        print("=" * 70)
+
+        print("\n🎬 VIDEO SETTINGS:")
+        print("   Resolution:")
+        print("     • 480p  - Smaller files, faster encoding (SD quality)")
+        print("     • 720p  - Good balance of quality and file size (HD)")
+        print("     • 1080p - High quality, larger files (Full HD)")
+
+        print("\n   CRF (Constant Rate Factor):")
+        print("     • 18-20 - Very high quality (large files)")
+        print("     • 23-24 - Good quality (recommended)")
+        print("     • 28-30 - Lower quality (smaller files)")
+
+        print("\n   Codec:")
+        print("     • libx264 - H.264 codec, best compatibility")
+        print("     • libx265 - H.265/HEVC, better compression but slower")
+
+        print("\n   Preset:")
+        print("     • fast/faster   - Quick encoding, larger files")
+        print("     • medium        - Balanced (recommended)")
+        print("     • slow/slower   - Better compression, takes longer")
+
+        print("\n🔊 AUDIO SETTINGS:")
+        print("   • AAC (128k-192k) - Best compatibility and quality")
+        print("   • MP3 (128k-320k) - Universal compatibility")
+
+        print("\n📝 SUBTITLE SETTINGS:")
+        print("   • Enabled: Subtitles are burned into the video permanently")
+        print("   • Language: Use 3-letter codes (eng, tha, jpn, chi, etc.)")
+        print("   • Leave blank to use default subtitle track")
+
+        print("\n⚙️  PROCESSING OPTIONS:")
+        print("   • Parallel Processing: Process multiple files at once")
+        print("     WARNING: Uses more CPU and RAM")
+        print("   • Max Workers: How many files to process simultaneously")
+        print("     Recommended: Number of CPU cores - 1")
+        print("   • Skip Existing: Don't re-convert files that already exist")
+
+        print("\n💡 COMMON PRESETS:")
+        print("   Small Files, Fast:  480p, CRF 28, preset fast")
+        print("   Balanced Quality:   480p, CRF 24, preset medium")
+        print("   High Quality:       720p, CRF 20, preset slow")
+        print("   Archive Quality:    1080p, CRF 18, preset slower")
+
+        print("\n📍 FILE LOCATIONS:")
+        print(f"   Config file:   {self.config_path.absolute()}")
+        print(f"   Input folder:  {self.config.input_folder}")
+        print(f"   Output folder: {self.config.output_folder}")
+        print(f"   Logs folder:   {self.config.logs_folder}")
+
+        print("=" * 70)
+        input("\n Press Enter to continue...")
+
+    def quick_setup_wizard(self) -> None:
+        """Run quick setup wizard for first-time users."""
+        print("\n" + "=" * 70)
+        print("🚀 Quick Setup Wizard")
+        print("=" * 70)
+        print("\nLet's configure your video converter with a few simple questions.\n")
+
+        # Quality preset
+        print("📊 Choose quality preset:")
+        print("  1. High Quality (720p, CRF 20) - Larger files, better quality")
+        print("  2. Balanced (480p, CRF 24) - Recommended for most users")
+        print("  3. Smaller Files (480p, CRF 28) - Faster conversion, smaller files")
+
+        quality = input("\nSelect preset (1-3) [2]: ").strip() or "2"
+
+        if quality == "1":
+            self.config.video.resolution = 720
+            self.config.video.crf = 20
+            print("✓ High quality preset selected")
+        elif quality == "3":
+            self.config.video.resolution = 480
+            self.config.video.crf = 28
+            print("✓ Smaller files preset selected")
+        else:
+            self.config.video.resolution = 480
+            self.config.video.crf = 24
+            print("✓ Balanced preset selected")
+
+        # Subtitle settings
+        print("\n📝 Subtitle settings:")
+        subtitles = input("Do you want to burn subtitles into the video? (yes/no) [yes]: ").strip().lower() or "yes"
+        self.config.subtitles.enabled = subtitles in ['yes', 'y']
+
+        if self.config.subtitles.enabled:
+            lang = input("Preferred subtitle language code (e.g., eng, tha, jpn) [auto]: ").strip()
+            if lang and lang.lower() != "auto":
+                self.config.subtitles.language = lang
+                print(f"✓ Will use '{lang}' subtitles when available")
+            else:
+                print("✓ Will use default subtitle track")
+        else:
+            print("✓ Subtitles disabled")
+
+        # Parallel processing
+        print("\n⚙️  Performance settings:")
+        parallel = input("Enable parallel processing for faster conversion? (yes/no) [no]: ").strip().lower() or "no"
+        self.config.parallel_processing = parallel in ['yes', 'y']
+
+        if self.config.parallel_processing:
+            workers = input("How many files to process simultaneously? (1-4) [2]: ").strip() or "2"
+            try:
+                self.config.max_workers = min(4, max(1, int(workers)))
+                print(f"✓ Will process {self.config.max_workers} files in parallel")
+            except ValueError:
+                print("✓ Using default: 2 workers")
+
+        # Directories
+        print("\n📁 Directory settings:")
+        print("   Input folder:  Where your MKV files are located")
+        print("   Output folder: Where converted MP4 files will be saved")
+
+        change_dirs = input("\nUse default folders (input/, output/)? (yes/no) [yes]: ").strip().lower() or "yes"
+        if change_dirs not in ['yes', 'y']:
+            input_dir = input("Input folder path: ").strip()
+            if input_dir:
+                self.config.input_folder = Path(input_dir)
+
+            output_dir = input("Output folder path: ").strip()
+            if output_dir:
+                self.config.output_folder = Path(output_dir)
+
+        print("\n" + "=" * 70)
+        print("✨ Setup complete! Your configuration:")
+        print("=" * 70)
+        self.display_config()
+
+        save = input("\n💾 Save this configuration to config.yaml? (yes/no) [yes]: ").strip().lower() or "yes"
+        if save in ['yes', 'y']:
+            self.save_configuration()
+            print("\n✅ Configuration saved! You can now run the converter.")
+            print("   To make changes later, run this script again.")
+        else:
+            print("\n⚠️  Configuration not saved. Run setup again to configure.")
+
     def run(self) -> None:
         """Run the interactive configuration manager."""
-        print("\n" + "=" * 60)
-        print("MKV to MP4 Converter - Configuration Manager")
-        print("=" * 60)
+        self.show_welcome()
+
+        # If first run, offer quick setup
+        if self.is_first_run:
+            print("\n🎯 It looks like this is your first time setting up.")
+            run_wizard = input("Would you like to run the Quick Setup Wizard? (yes/no) [yes]: ").strip().lower() or "yes"
+            if run_wizard in ['yes', 'y']:
+                self.quick_setup_wizard()
+                return
 
         while True:
             print("\n📋 Main Menu:")
             print("  1. View current configuration")
-            print("  2. Update directory settings")
-            print("  3. Update video settings")
-            print("  4. Update audio settings")
-            print("  5. Update subtitle settings")
-            print("  6. Update processing options")
-            print("  7. Save configuration")
-            print("  8. Reset to defaults")
-            print("  9. Reload configuration")
+            print("  2. 🚀 Quick Setup Wizard (Easy configuration)")
+            print("  3. Update directory settings")
+            print("  4. Update video settings")
+            print("  5. Update audio settings")
+            print("  6. Update subtitle settings")
+            print("  7. Update processing options")
+            print("  8. Save configuration")
+            print("  9. Reset to defaults")
+            print("  R. Reload configuration from file")
+            print("  H. Show help and tips")
             print("  0. Exit")
 
-            choice = input("\nSelect option (0-9): ").strip()
+            choice = input("\nSelect option: ").strip().lower()
 
             if choice == "1":
                 self.display_config()
             elif choice == "2":
-                self.update_directories()
+                self.quick_setup_wizard()
             elif choice == "3":
-                self.update_video_settings()
+                self.update_directories()
             elif choice == "4":
-                self.update_audio_settings()
+                self.update_video_settings()
             elif choice == "5":
-                self.update_subtitle_settings()
+                self.update_audio_settings()
             elif choice == "6":
-                self.update_processing_options()
+                self.update_subtitle_settings()
             elif choice == "7":
-                self.save_configuration()
+                self.update_processing_options()
             elif choice == "8":
-                self.reset_to_defaults()
+                self.save_configuration()
             elif choice == "9":
+                self.reset_to_defaults()
+            elif choice == "r":
                 self.load_configuration()
+            elif choice == "h":
+                self.show_help()
             elif choice == "0":
                 print("\n👋 Goodbye!")
                 break
             else:
-                print("✗ Invalid option. Please select 0-9.")
+                print("✗ Invalid option. Please try again.")
 
 
 def main() -> None:

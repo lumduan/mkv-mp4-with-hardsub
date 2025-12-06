@@ -64,14 +64,15 @@ pip install -r requirements.txt
 
 **Option A: Use the Interactive Config Manager** (Recommended)
 ```bash
-python scripts/config_manager.py
+.venv/bin/python scripts/config_manager.py
 ```
 
-This launches an interactive menu where you can:
-- View current configuration
-- Update settings category by category
-- Validate changes in real-time
-- Save your configuration
+This launches an interactive menu with:
+- **Quick Setup Wizard**: Easy step-by-step configuration for first-time users
+- **Guided Quality Presets**: Choose from High Quality, Balanced, or Smaller Files
+- **Smart Defaults**: Automatically configure optimal settings
+- **Real-time Validation**: Validates all inputs before saving
+- **Help System**: Built-in documentation with detailed explanations
 
 **Option B: Edit `config.yaml` Directly**
 ```bash
@@ -182,44 +183,108 @@ python main.py
 
 ## 🛠️ Interactive Config Manager
 
-The config manager provides a user-friendly menu for managing settings:
+The config manager provides a user-friendly menu-driven interface for managing settings with an enhanced Quick Setup Wizard for first-time users.
 
 ### Launch the Config Manager
+
 ```bash
-python scripts/config_manager.py
+.venv/bin/python scripts/config_manager.py
 ```
 
 ### Features
-- **View Configuration**: Display all current settings
-- **Update Settings**: Change settings by category:
+
+#### 🚀 Quick Setup Wizard (New!)
+Perfect for first-time users or quick reconfiguration:
+- **Quality Presets**: Choose from 3 optimized presets:
+  - High Quality (720p, CRF 20) - Better quality, larger files
+  - Balanced (480p, CRF 24) - Recommended for most users
+  - Smaller Files (480p, CRF 28) - Faster conversion, smaller files
+- **Guided Subtitle Configuration**: Enable/disable and select language
+- **Performance Options**: Configure parallel processing
+- **Directory Setup**: Configure input/output paths
+
+#### 📋 Advanced Configuration Menu
+- **View Configuration**: Display all current settings in organized sections
+- **Update Settings by Category**:
   - Directory paths
   - Video encoding options
   - Audio encoding options
   - Subtitle settings
   - Processing options
+- **Help System (Press H)**: Detailed documentation with:
+  - Video settings explained (resolution, CRF, codec, preset)
+  - Audio codec recommendations
+  - Common quality presets
+  - File location information
 - **Save/Reload**: Save changes or reload from disk
 - **Reset to Defaults**: Restore factory settings
-- **Real-time Validation**: Validates input before accepting changes
+- **Real-time Validation**: Validates all inputs before accepting changes
 
-### Example Usage
+### Example Usage - Quick Setup Wizard
 
+```text
+======================================================================
+               🎬 MKV to MP4 Converter
+               Configuration Manager
+======================================================================
+
+📝 About config.yaml:
+   The config.yaml file controls how your videos are converted.
+
+🎯 It looks like this is your first time setting up.
+Would you like to run the Quick Setup Wizard? (yes/no) [yes]: yes
+
+======================================================================
+🚀 Quick Setup Wizard
+======================================================================
+
+📊 Choose quality preset:
+  1. High Quality (720p, CRF 20) - Larger files, better quality
+  2. Balanced (480p, CRF 24) - Recommended for most users
+  3. Smaller Files (480p, CRF 28) - Faster conversion, smaller files
+
+Select preset (1-3) [2]: 2
+✓ Balanced preset selected
+
+📝 Subtitle settings:
+Do you want to burn subtitles into the video? (yes/no) [yes]: yes
+Preferred subtitle language code (e.g., eng, tha, jpn) [auto]: eng
+✓ Will use 'eng' subtitles when available
+
+⚙️  Performance settings:
+Enable parallel processing for faster conversion? (yes/no) [no]: no
+
+📁 Directory settings:
+Use default folders (input/, output/)? (yes/no) [yes]: yes
+
+✨ Setup complete! Your configuration:
+[Shows current configuration]
+
+💾 Save this configuration to config.yaml? (yes/no) [yes]: yes
+✓ Configuration saved to config.yaml
+
+✅ Configuration saved! You can now run the converter.
+   To make changes later, run this script again.
 ```
-MKV to MP4 Converter - Configuration Manager
-============================================================
 
+### Example Usage - Advanced Menu
+
+```text
 📋 Main Menu:
   1. View current configuration
-  2. Update directory settings
-  3. Update video settings
-  4. Update audio settings
-  5. Update subtitle settings
-  6. Update processing options
-  7. Save configuration
-  8. Reset to defaults
-  9. Reload configuration
+  2. 🚀 Quick Setup Wizard (Easy configuration)
+  3. Update directory settings
+  4. Update video settings
+  5. Update audio settings
+  6. Update subtitle settings
+  7. Update processing options
+  8. Save configuration
+  9. Reset to defaults
+  R. Reload configuration from file
+  H. Show help and tips
   0. Exit
 
-Select option (0-9): 3
+Select option: 4
 
 🎬 Video Encoding Settings
 ----------------------------------------
@@ -231,7 +296,7 @@ Available presets: ultrafast, superfast, veryfast, faster, fast, medium, slow, s
 Encoding preset [medium]: slow
 ✓ Video settings updated
 
-Select option (0-9): 7
+Select option: 8
 ✓ Configuration saved to config.yaml
 ```
 
