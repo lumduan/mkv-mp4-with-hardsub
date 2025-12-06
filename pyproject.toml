@@ -33,6 +33,7 @@ dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
     "loguru>=0.7.0",
+    "ffprobe>=0.5",
 ]
 
 [project.scripts]

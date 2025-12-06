@@ -602,7 +602,7 @@ class MKVProcessor:
             print("  1. View files and status")
             print("  2. View files with details (requires ffprobe)")
             print("  3. Process single file")
-            print("  4. 🚀 Process all pending files")
+            print("  4. Process all pending files")
             print("  5. View conversion history (current session)")
             print("  6. View current settings")
             print("  7. Refresh file list")
