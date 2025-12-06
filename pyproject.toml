@@ -1,9 +1,31 @@
 [project]
 name = "mkv-mp4-with-hardsub"
 version = "0.1.0"
-description = "Batch convert MKV files to 480p MP4 with hard-coded subtitles using FFmpeg"
+description = "Batch convert MKV files to 480p MP4 with hard-coded subtitles using FFmpeg - YAML-based configuration with interactive CLI"
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+keywords = [
+    "video-conversion",
+    "mkv",
+    "mp4",
+    "ffmpeg",
+    "batch-processing",
+    "subtitles",
+    "yaml-config",
+    "pydantic"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Multimedia :: Video :: Conversion",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 dependencies = [
     "ffmpeg-python>=0.2.0",
     "pyyaml>=6.0",
@@ -12,6 +34,10 @@ dependencies = [
     "pydantic-settings>=2.0",
     "loguru>=0.7.0",
 ]
+
+[project.scripts]
+mkv-convert = "main:main"
+config-manager = "scripts.config_manager:main"
 
 [project.optional-dependencies]
 dev = [

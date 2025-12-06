@@ -1,21 +1,98 @@
-# Input/Output Directories
-input_folder: "input"
-output_folder: "output"
-logs_folder: "logs"
+# ========================================
+# MKV to MP4 Batch Converter Configuration
+# ========================================
+#
+# This file contains all settings for the batch video converter.
+# Modify these values according to your needs.
+#
+# All settings can be overridden with environment variables
+# using the prefix CONVERTER_ (e.g., CONVERTER_VERBOSE=true)
 
+# ========================================
+# Directory Settings
+# ========================================
+# Paths can be relative or absolute
+input_folder: "input"       # Source MKV files location
+output_folder: "output"     # Converted MP4 files destination
+logs_folder: "logs"         # Log files location
+
+# ========================================
 # Video Encoding Settings
+# ========================================
 video:
-  resolution: 480          # Target height (480p, 720p, 1080p)
-  codec: "libx264"         # Video codec (libx264, libx265)
-  crf: 24                  # Quality (0-51, lower = better quality)
-  preset: "medium"         # Speed preset (ultrafast to veryslow)
+  # Target resolution (height in pixels)
+  # Common values: 480, 720, 1080, 1440, 2160
+  resolution: 480
 
+  # Video codec
+  # Options: libx264 (H.264), libx265 (H.265/HEVC)
+  # Note: libx265 provides better compression but slower encoding
+  codec: "libx264"
+
+  # Constant Rate Factor (quality)
+  # Range: 0-51 (lower = better quality, larger file)
+  # Recommended: 18-28
+  #   18-20: High quality, large files
+  #   23-24: Good quality (default)
+  #   28-30: Lower quality, smaller files
+  crf: 24
+
+  # Encoding speed preset
+  # Options: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
+  # Faster presets = quicker encoding but larger files
+  # Slower presets = slower encoding but better compression
+  preset: "medium"
+
+# ========================================
 # Audio Encoding Settings
+# ========================================
 audio:
-  codec: "aac"             # Audio codec
-  bitrate: "128k"          # Audio bitrate
+  # Audio codec
+  # Options: aac, mp3, opus, ac3
+  # aac: Best compatibility and quality
+  codec: "aac"
 
+  # Audio bitrate
+  # Common values: 96k, 128k, 192k, 256k
+  # Higher bitrate = better quality but larger files
+  bitrate: "128k"
+
+# ========================================
+# Subtitle Settings
+# ========================================
+subtitles:
+  # Enable subtitle burning (hard-coded subtitles)
+  # If disabled, subtitles won't be included in output
+  enabled: true
+
+  # Preferred subtitle language (optional)
+  # Language codes: eng, tha, jpn, chi, etc.
+  # Leave null to use default subtitle track
+  language: null
+
+  # Custom subtitle style (optional)
+  # FFmpeg subtitle filter force_style parameter
+  # Example: "FontName=Arial,FontSize=24,PrimaryColour=&H00FFFF"
+  force_style: null
+
+# ========================================
 # Processing Options
-parallel_processing: false  # Enable parallel conversions
-max_workers: 2             # Number of parallel workers
-skip_existing: true        # Skip already converted files
+# ========================================
+
+# Enable parallel processing of multiple files
+# Warning: Uses more CPU and memory
+# Only enable on multi-core systems with sufficient resources
+parallel_processing: false
+
+# Number of parallel workers (1-16)
+# Only used when parallel_processing is enabled
+# Recommended: Number of CPU cores - 1
+max_workers: 2
+
+# Skip files that have already been converted
+# Checks if output file exists with _480p suffix
+skip_existing: true
+
+# Enable verbose logging
+# Shows detailed debug information
+verbose: false
