@@ -251,10 +251,14 @@ class MKVProcessor:
                     if "width" in video_info and "height" in video_info:
                         print(f"        - Resolution: {video_info['width']}x{video_info['height']}")
                     if "duration" in video_info:
-                        duration_sec = float(video_info['duration'])
-                        duration_min = int(duration_sec // 60)
-                        duration_sec_remainder = int(duration_sec % 60)
-                        print(f"        - Duration: {duration_min}m {duration_sec_remainder}s")
+                        try:
+                            duration_sec = float(video_info['duration'])
+                            duration_min = int(duration_sec // 60)
+                            duration_sec_remainder = int(duration_sec % 60)
+                            print(f"        - Duration: {duration_min}m {duration_sec_remainder}s")
+                        except (ValueError, TypeError):
+                            # Duration is not a valid number (e.g., 'N/A')
+                            print(f"        - Duration: {video_info['duration']}")
 
         print("\n" + "="*70 + "\n")
 
