@@ -41,7 +41,6 @@ if sys.version_info >= (3, 14) and "a" in sys.version.lower():
 try:
     from src.config import load_config, Config
     from src.converter import BatchConverter, ConversionResult
-    from src.logger import setup_logging
     from src.utils import validate_ffmpeg, get_video_info, validate_ffprobe
     from loguru import logger
 except Exception as e:
@@ -106,10 +105,7 @@ class MKVProcessor:
         self._load_configuration()
 
         # Setup logging
-        setup_logging(
-            logs_folder=self.config.logs_folder,
-            verbose=self.config.verbose
-        )
+        self._setup_logging()
 
     def _load_configuration(self) -> None:
         """Load configuration and initialize converter."""
@@ -129,6 +125,53 @@ class MKVProcessor:
             self.config = Config()
             self.config.ensure_directories()
             self.converter = BatchConverter(config=self.config)
+
+    def _setup_logging(self) -> None:
+        """Setup Loguru logging configuration.
+
+        Configures console and file logging with appropriate levels
+        based on the verbose setting in configuration.
+        """
+        # Remove default handler
+        logger.remove()
+
+        # Console handler with color and formatting
+        log_level: str = "DEBUG" if self.config.verbose else "INFO"
+        logger.add(
+            sys.stderr,
+            format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>",
+            level=log_level,
+            colorize=True,
+        )
+
+        # File handler - all logs with rotation
+        logger.add(
+            self.config.logs_folder / "process_mkv_{time:YYYY-MM-DD}.log",
+            format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}",
+            level="DEBUG",
+            rotation="00:00",  # New file at midnight
+            retention="30 days",  # Keep logs for 30 days
+            compression="zip",  # Compress rotated logs
+        )
+
+        # Success log - only successful conversions
+        logger.add(
+            self.config.logs_folder / "success.log",
+            format="{time:YYYY-MM-DD HH:mm:ss} | {message}",
+            level="SUCCESS",
+            filter=lambda record: record["level"].name == "SUCCESS",
+        )
+
+        # Error log - only errors
+        logger.add(
+            self.config.logs_folder / "errors.log",
+            format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+            level="ERROR",
+            backtrace=True,  # Include full traceback
+            diagnose=True,   # Show variable values
+        )
+
+        logger.info("Logging initialized for MKV processor")
 
     def _scan_files(self) -> None:
         """Scan input folder for MKV files."""
