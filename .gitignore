@@ -6,6 +6,15 @@ input/
 output/
 logs/
 
+# Debug directory - exclude generated test files
+debug/*.srt
+debug/*.mkv
+debug/*.mp4
+debug/*.avi
+debug/*.txt
+debug/output/
+debug/temp/
+
 # Python
 __pycache__/
 *.py[cod]

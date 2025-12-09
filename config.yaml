@@ -27,7 +27,7 @@ video:
   # Video codec
   # Options: libx264 (H.264), libx265 (H.265/HEVC)
   # Note: libx265 provides better compression but slower encoding
-  codec: "libx264"
+  codec: "libx265"
 
   # Constant Rate Factor (quality)
   # Range: 0-51 (lower = better quality, larger file)
@@ -35,13 +35,13 @@ video:
   #   18-20: High quality, large files
   #   23-24: Good quality (default)
   #   28-30: Lower quality, smaller files
-  crf: 24
+  crf: 30
 
   # Encoding speed preset
   # Options: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
   # Faster presets = quicker encoding but larger files
   # Slower presets = slower encoding but better compression
-  preset: "medium"
+  preset: "slower"
 
 # ========================================
 # Audio Encoding Settings
@@ -55,7 +55,7 @@ audio:
   # Audio bitrate
   # Common values: 96k, 128k, 192k, 256k
   # Higher bitrate = better quality but larger files
-  bitrate: "128k"
+  bitrate: "96k"
 
 # ========================================
 # Subtitle Settings
