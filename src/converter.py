@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Any
 import subprocess
+import platform
 from dataclasses import dataclass
 from datetime import datetime
 from loguru import logger
@@ -57,6 +58,34 @@ class BatchConverter:
         self.config.output_folder.mkdir(parents=True, exist_ok=True)
         self.config.logs_folder.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Ensured directories exist: output={self.config.output_folder}, logs={self.config.logs_folder}")
+
+    @staticmethod
+    def _get_system_fonts_dir() -> str:
+        """Get the system fonts directory based on the operating system.
+
+        Returns:
+            str: Path to system fonts directory
+
+        Examples:
+            >>> fonts_dir = BatchConverter._get_system_fonts_dir()
+            >>> print(fonts_dir)
+            '/System/Library/Fonts/'  # on macOS
+        """
+        system = platform.system()
+
+        if system == "Darwin":  # macOS
+            # macOS has multiple font directories, prioritize the main one
+            return "/System/Library/Fonts/"
+        elif system == "Linux":
+            # Linux standard font directory
+            return "/usr/share/fonts/"
+        elif system == "Windows":
+            # Windows fonts directory
+            return "C:/Windows/Fonts/"
+        else:
+            # Fallback - try common Linux path
+            logger.warning(f"Unknown platform: {system}, using Linux default fonts path")
+            return "/usr/share/fonts/"
 
     def scan_input_folder(self) -> list[Path]:
         """Scan input folder for MKV files.
@@ -141,8 +170,15 @@ class BatchConverter:
 
         # Add subtitle filter if enabled
         if self.config.subtitles.enabled:
-            # Build subtitle filter
-            subtitle_filter = f"subtitles={input_file}"
+            # Get system fonts directory for proper font rendering
+            fonts_dir = self._get_system_fonts_dir()
+
+            # Escape the input file path for FFmpeg filter (replace : with \: and \ with \\)
+            # This is needed for Windows paths and special characters
+            escaped_input = str(input_file).replace('\\', '/').replace(':', '\\:')
+
+            # Build subtitle filter with font directory for proper Thai character support
+            subtitle_filter = f"subtitles='{escaped_input}':fontsdir='{fonts_dir}'"
 
             # Add language specification if provided
             if self.config.subtitles.language:
